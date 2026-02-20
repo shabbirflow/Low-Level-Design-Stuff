@@ -1,0 +1,88 @@
+/*
+========================
+Parking Lot LLD – Design Recap
+========================
+
+1. Core idea:
+The Parking Lot system is designed around clear separation of responsibilities.
+No class does more than one conceptual job, and all policies that may change
+independently are isolated behind abstractions.
+
+2. Key entities and responsibilities:
+
+- Vehicle (Bike, Car, Truck):
+Vehicle represents what is being parked.
+Each concrete vehicle only exposes the type of parking spot it requires.
+Vehicle does NOT contain any parking or allocation logic.
+
+- SpotType:
+SpotType is an enum that defines the size/category of parking spots.
+It centralizes compatibility rules between vehicles and spots.
+
+- ParkingSpot:
+ParkingSpot represents the actual resource being allocated.
+It owns its own state (free or occupied) and enforces invariants.
+It decides whether it can fit a given vehicle and mutates its own state
+when a vehicle is assigned or removed.
+No allocation strategy or orchestration logic lives here.
+
+- Floor:
+Floor is a logical grouping of parking spots.
+It exists to model real-world structure and scalability.
+Floor does not decide which spot to allocate.
+
+- SpotAllocator (Strategy):
+SpotAllocator encapsulates the policy for selecting a parking spot.
+Different allocation strategies (first available, nearest, etc.)
+can be added without modifying ParkingLot.
+The allocator selects a spot but never mutates state.
+
+- Ticket:
+Ticket represents a parking session.
+It contains the vehicle, the allocated spot, and the entry time.
+Ticket is immutable after creation and acts as the handle for unpark.
+No business logic lives inside Ticket.
+
+- ParkingLot:
+ParkingLot is the orchestrator of the system.
+It coordinates parking and unparking by delegating:
+  - spot selection to SpotAllocator
+  - state changes to ParkingSpot
+  - session tracking to Ticket
+ParkingLot does not implement allocation logic and does not manage spot internals.
+
+3. Park flow:
+- ParkingLot receives a Vehicle.
+- ParkingLot asks SpotAllocator to find a suitable ParkingSpot.
+- ParkingLot tells the chosen ParkingSpot to assign the Vehicle.
+- ParkingLot creates and returns a Ticket.
+
+4. Unpark flow:
+- ParkingLot receives a Ticket.
+- ParkingLot extracts the ParkingSpot from the Ticket.
+- ParkingLot tells the ParkingSpot to remove the Vehicle.
+No lookup tables or recomputation is required.
+
+5. SOLID principles:
+- SRP: Each class has exactly one reason to change.
+- OCP: New vehicle types or allocation strategies are added via new classes.
+- LSP: All abstractions can be safely substituted.
+- ISP: Interfaces are small and focused.
+- DIP: High-level logic depends on abstractions, not concrete implementations.
+
+6. Patterns used naturally:
+- Strategy: SpotAllocator for allocation policy.
+- Composition over inheritance for behavior extension.
+No premature factories or unnecessary abstractions are introduced.
+
+7. Design philosophy:
+ParkingSpot owns state.
+ParkingLot orchestrates.
+Policies are isolated.
+Data flows through objects that naturally represent the domain.
+The design is extensible without over-engineering.
+
+========================
+End of Design Recap
+========================
+*/
